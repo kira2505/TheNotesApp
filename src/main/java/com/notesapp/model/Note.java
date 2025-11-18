@@ -1,4 +1,4 @@
-package com.notesapp.entity;
+package com.notesapp.model;
 
 import com.notesapp.enums.Tag;
 import jakarta.validation.constraints.NotBlank;
