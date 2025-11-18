@@ -1,13 +1,13 @@
 package com.notesapp.model;
 
-import com.notesapp.enums.Tag;
-import jakarta.validation.constraints.NotBlank;
+import com.notesapp.enums.NoteTag;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -22,14 +22,15 @@ public class Note {
     @Id
     private String id;
 
-    @NotBlank
     private String title;
 
-    @NotBlank
     private String text;
 
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    private Set<Tag> tags;
+    private Set<NoteTag> tags;
+
+    @Field("user_id")
+    private String userId;
 }

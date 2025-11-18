@@ -1,11 +1,12 @@
 package com.notesapp.service;
 
+import com.notesapp.enums.NoteTag;
 import com.notesapp.model.Note;
-import com.notesapp.enums.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 
 public interface NoteService {
 
@@ -17,8 +18,9 @@ public interface NoteService {
 
     Note getNoteById(String id);
 
-    List<Note> getAllNotes();
+    Page<Note> getAllNotes(Pageable pageable);
 
-    Page<Note> getNoteByTag(Tag tag,  Pageable pageable);
+    Page<Note> getNotesByTag(NoteTag tag, Pageable pageable);
 
+    Map<String, Integer> getCountOfNoteWords(String id);
 }

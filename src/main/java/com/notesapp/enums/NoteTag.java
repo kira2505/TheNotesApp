@@ -1,6 +1,6 @@
 package com.notesapp.enums;
 
-public enum Tag {
+public enum NoteTag {
 
     BUSINESS,
     PERSONAL,
