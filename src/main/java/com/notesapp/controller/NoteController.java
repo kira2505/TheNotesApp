@@ -75,4 +75,9 @@ public class NoteController implements NoteApi {
     public Map<String, Integer> getCountOfUniqWords(@PathVariable String id) {
         return noteService.getCountOfNoteWords(id);
     }
+
+    @Override
+    public NoteResponseDto getNoteById(@PathVariable String id) {
+        return noteMapper.toDto(noteService.getNoteById(id));
+    }
 }

@@ -46,4 +46,9 @@ public interface NoteApi {
     @ApiResponse(responseCode = "200", description = "Word count returned")
     @GetMapping("/{id}/stats")
     Map<String, Integer> getCountOfUniqWords(@PathVariable String id);
+
+    @Operation(summary = "Get a note by id")
+    @ApiResponse(responseCode = "200", description = "Note returned")
+    @GetMapping("/{id}")
+    NoteResponseDto getNoteById(@PathVariable String id);
 }

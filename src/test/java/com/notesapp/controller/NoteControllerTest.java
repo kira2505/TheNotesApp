@@ -195,4 +195,30 @@ class NoteControllerTest {
                 .andExpect(jsonPath("$.Java").value(3))
                 .andExpect(jsonPath("$.Spring").value(2));
     }
+
+    @Test
+    void testGetNoteById_success() throws Exception {
+        Note note = new Note();
+        note.setId("id1");
+        note.setTitle("Test Note");
+        note.setText("Some text");
+        note.setTags(Set.of(NoteTag.PERSONAL));
+        note.setCreatedAt(LocalDateTime.now());
+
+        NoteResponseDto responseDto = new NoteResponseDto();
+        responseDto.setId("id1");
+        responseDto.setTitle("Test Note");
+        responseDto.setText("Some text");
+        responseDto.setTags(Set.of(NoteTag.PERSONAL));
+        responseDto.setCreatedAt(note.getCreatedAt());
+
+        when(noteService.getNoteById("id1")).thenReturn(note);
+        when(noteMapper.toDto(note)).thenReturn(responseDto);
+
+        mockMvc.perform(get("/notes/id1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("id1"))
+                .andExpect(jsonPath("$.title").value("Test Note"))
+                .andExpect(jsonPath("$.tags[0]").value("PERSONAL"));
+    }
 }

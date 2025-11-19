@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class NoteDto {
 
+    private String id;
+
     private String title;
 
     private LocalDateTime createdAt;
