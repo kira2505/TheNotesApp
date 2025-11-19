@@ -6,6 +6,8 @@ import com.notesapp.dto.NoteResponseDto;
 import com.notesapp.enums.NoteTag;
 import com.notesapp.mapper.NoteMapper;
 import com.notesapp.model.Note;
+import com.notesapp.repository.NoteRepository;
+import com.notesapp.service.AppUserService;
 import com.notesapp.service.NoteService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +17,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/notes")
@@ -26,6 +30,12 @@ public class NoteController implements NoteApi {
 
     @Autowired
     private NoteMapper noteMapper;
+
+    @Autowired
+    private NoteRepository noteRepository;
+
+    @Autowired
+    private AppUserService appUserService;
 
     @Override
     public NoteResponseDto createNote(@Valid @RequestBody NoteCreateDto note) {
@@ -43,17 +53,22 @@ public class NoteController implements NoteApi {
     }
 
     @Override
-    public Page<NoteDto> getNotes(@RequestParam(defaultValue = "0") int page,
+    public List<NoteDto> getNotes(@RequestParam(defaultValue = "0") int page,
+                                  @RequestParam(defaultValue = "10") int size,
                                   @RequestParam(required = false) NoteTag tag) {
-        Pageable pageable = PageRequest.of(page, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<Note> notes;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<Note> notesPage;
         if (tag != null) {
-            notes = noteService.getNotesByTag(tag, pageable);
+            notesPage = noteRepository.findByUserIdAndTags(appUserService.getAppUser().getId(), tag, pageable);
         } else {
-            notes = noteService.getAllNotes(pageable);
+            notesPage = noteRepository.findByUserId(appUserService.getAppUser().getId(), pageable);
         }
 
-        return noteMapper.toDtoPage(notes);
+        return notesPage.getContent()
+                .stream()
+                .map(noteMapper::toNoteDto)
+                .collect(Collectors.toList());
     }
 
     @Override

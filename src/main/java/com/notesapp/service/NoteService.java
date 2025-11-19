@@ -18,9 +18,9 @@ public interface NoteService {
 
     Note getNoteById(String id);
 
-    Page<Note> getAllNotes(Pageable pageable);
+    List<Note> getAllNotes(Pageable pageable);
 
-    Page<Note> getNotesByTag(NoteTag tag, Pageable pageable);
+    List<Note> getNotesByTag(NoteTag tag, Pageable pageable);
 
     Map<String, Integer> getCountOfNoteWords(String id);
 }

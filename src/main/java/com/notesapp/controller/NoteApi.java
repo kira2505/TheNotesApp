@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @Tag(name = "The Notes App", description = "API for creating, editing, and managing your notes. " +
@@ -38,8 +39,9 @@ public interface NoteApi {
     @Operation(summary = "Get a paginated list of notes")
     @ApiResponse(responseCode = "200", description = "Notes list returned")
     @GetMapping
-    Page<NoteDto> getNotes(@RequestParam(defaultValue = "0") int page,
-                           @RequestParam(required = false) NoteTag tag);
+    List<NoteDto> getNotes(@RequestParam(defaultValue = "0") int page,
+                                  @RequestParam(defaultValue = "10") int size,
+                                  @RequestParam(required = false) NoteTag tag);
 
     @Operation(summary = "Get unique words count in a note")
     @ApiResponse(responseCode = "200", description = "Word count returned")

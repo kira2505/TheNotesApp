@@ -29,6 +29,7 @@ public class NoteServiceImpl implements NoteService {
     @Override
     public Note createNote(Note note) {
         isTagValid(note);
+        note.setUserId(appUserService.getAppUser().getId());
         return noteRepository.save(note);
     }
 
@@ -57,14 +58,15 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public Page<Note> getAllNotes(Pageable pageable) {
-        return noteRepository.findByUserId(appUserService.getAppUser().getId(), pageable);
+    public List<Note> getAllNotes(Pageable pageable) {
+        Page<Note> page = noteRepository.findByUserId(appUserService.getAppUser().getId(), pageable);
+        return page.getContent(); // возвращаем просто список
     }
 
     @Override
-    public Page<Note> getNotesByTag(NoteTag tag, Pageable pageable) {
-        return noteRepository.findByUserIdAndTags(appUserService.getAppUser().getId(),
-                tag, pageable);
+    public List<Note> getNotesByTag(NoteTag tag, Pageable pageable) {
+        Page<Note> page = noteRepository.findByUserIdAndTags(appUserService.getAppUser().getId(), tag, pageable);
+        return page.getContent();
     }
 
     @Override

@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -29,6 +30,7 @@ public class Note {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Indexed
     private Set<NoteTag> tags;
 
     @Field("user_id")

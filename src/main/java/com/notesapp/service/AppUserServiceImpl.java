@@ -19,6 +19,9 @@ public class AppUserServiceImpl implements AppUserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private TestNoteGenerator testNoteGenerator;
+
     @Override
     public AppUser register(AppUser appUser, String rawPassword) {
         if (rawPassword == null || rawPassword.isBlank()) {
@@ -27,6 +30,9 @@ public class AppUserServiceImpl implements AppUserService {
         appUser.setPasswordHash(passwordEncoder.encode(appUser.getPassword()));
         appUser.setRole(Role.ROLE_USER);
         AppUser savedUser = appUserRepository.save(appUser);
+
+        testNoteGenerator.createRandomNotesForUser(appUser);
+
         return savedUser;
     }
 
