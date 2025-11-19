@@ -1,18 +1,17 @@
 services:
   app:
     build: .
-    container_name: notes-app
+    container_name: thenotesapp
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/notesdb
+      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/thenotesdb
     depends_on:
       - mongo
 
   mongo:
     image: mongo:6.0
-    container_name: notes-mongo
-    restart: always
+    container_name: thenotes-mongo
     ports:
       - "27017:27017"
     volumes:
