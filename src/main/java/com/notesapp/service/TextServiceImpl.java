@@ -16,14 +16,14 @@ public class TextServiceImpl implements TextService {
         String[] words = text.toLowerCase()
                 .replaceAll("[^\\p{L}\\d\\s]", "").split("\\s+");
 
-        for(String word : words){
-            if(!word.isBlank()) {
+        for (String word : words) {
+            if (!word.isBlank()) {
                 wordsCount.put(word, wordsCount.getOrDefault(word, 0) + 1);
             }
         }
 
         return wordsCount.entrySet().stream()
-                .sorted(Map.Entry.<String,Integer>comparingByValue().reversed())
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .collect(
                         LinkedHashMap::new,
                         (m, e) -> m.put(e.getKey(), e.getValue()),
