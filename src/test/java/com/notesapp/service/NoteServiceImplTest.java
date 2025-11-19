@@ -12,6 +12,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.util.*;
@@ -54,7 +56,13 @@ class NoteServiceImplTest {
 
     @Test
     void testCreateNote_success() {
+        AppUser user = new AppUser();
+        user.setId("user123");
+        when(appUserService.getAppUser()).thenReturn(user);
+
         Note note = new Note();
+        note.setTitle("title");
+        note.setText("text");
         note.setTags(Set.of(NoteTag.PERSONAL));
 
         when(noteRepository.save(note)).thenReturn(note);
@@ -63,6 +71,7 @@ class NoteServiceImplTest {
 
         verify(noteRepository).save(note);
         assertNotNull(saved);
+        assertEquals("title", saved.getTitle());
     }
 
     @Test
@@ -100,35 +109,40 @@ class NoteServiceImplTest {
 
     @Test
     void testGetAllNotes() {
-        Page<Note> page = mock(Page.class);
-        Pageable pageable = mock(Pageable.class);
-
-        var user = new AppUser();
+        AppUser user = new AppUser();
         user.setId("user123");
-
         when(appUserService.getAppUser()).thenReturn(user);
+
+        Pageable pageable = PageRequest.of(0, 10);
+        Note note = new Note();
+        note.setId("id1");
+
+        Page<Note> page = new PageImpl<>(List.of(note));
         when(noteRepository.findByUserId("user123", pageable)).thenReturn(page);
 
-        Page<Note> result = noteService.getAllNotes(pageable);
+        List<Note> result = noteService.getAllNotes(pageable);
 
-        assertEquals(page, result);
+        assertEquals(1, result.size());
+        assertEquals("id1", result.get(0).getId());
     }
 
     @Test
     void testGetNotesByTag() {
-        Page<Note> page = mock(Page.class);
-        Pageable pageable = mock(Pageable.class);
-
-        var user = new AppUser();
+        AppUser user = new AppUser();
         user.setId("u1");
-
         when(appUserService.getAppUser()).thenReturn(user);
-        when(noteRepository.findByUserIdAndTags("u1", NoteTag.IMPORTANT, pageable))
-                .thenReturn(page);
 
-        Page<Note> result = noteService.getNotesByTag(NoteTag.IMPORTANT, pageable);
+        Pageable pageable = PageRequest.of(0, 10);
+        Note note = new Note();
+        note.setId("id1");
 
-        assertEquals(page, result);
+        Page<Note> page = new PageImpl<>(List.of(note));
+        when(noteRepository.findByUserIdAndTags("u1", NoteTag.IMPORTANT, pageable)).thenReturn(page);
+
+        List<Note> result = noteService.getNotesByTag(NoteTag.IMPORTANT, pageable);
+
+        assertEquals(1, result.size());
+        assertEquals("id1", result.get(0).getId());
     }
 
     @Test
@@ -160,7 +174,7 @@ class NoteServiceImplTest {
 
         Set<NoteTag> tags = new HashSet<>();
         tags.add(NoteTag.BUSINESS);
-        tags.add(null); // здесь эмулируем невалидный тег
+        tags.add(null);
 
         note.setTags(tags);
 

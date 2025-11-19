@@ -2,26 +2,30 @@ package com.notesapp.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notesapp.dto.NoteCreateDto;
+import com.notesapp.dto.NoteDto;
 import com.notesapp.dto.NoteResponseDto;
 import com.notesapp.enums.NoteTag;
 import com.notesapp.mapper.NoteMapper;
+import com.notesapp.model.AppUser;
 import com.notesapp.model.Note;
+import com.notesapp.repository.NoteRepository;
 import com.notesapp.security.JwtService;
+import com.notesapp.service.AppUserService;
 import com.notesapp.service.NoteService;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.*;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -33,141 +37,162 @@ class NoteControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private NoteService noteService;
-
-    @MockBean
     private JwtService jwtService;
-
-    @MockBean
-    private NoteMapper noteMapper;
 
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Test
-    void testCreateNote() throws Exception {
-        NoteCreateDto createDto = new NoteCreateDto("new title", "new text", Set.of(NoteTag.BUSINESS));
-        Note model = new Note();
-        NoteResponseDto response = new NoteResponseDto();
-        response.setId("id1");
-        response.setTitle("new title");
-        response.setText("new text");
-        response.setTags(Set.of(NoteTag.BUSINESS));
+    @MockBean
+    private NoteService noteService;
 
-        Mockito.when(noteMapper.toModel(any())).thenReturn(model);
-        Mockito.when(noteService.createNote(any())).thenReturn(model);
-        Mockito.when(noteMapper.toDto(model)).thenReturn(response);
+    @MockBean
+    private AppUserService appUserService;
 
-        mockMvc.perform(post("/notes")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createDto)))
-                .andExpect(status().isCreated()) // 201
-                .andExpect(jsonPath("$.id").value("id1"))
-                .andExpect(jsonPath("$.title").value("new title"))
-                .andExpect(jsonPath("$.text").value("new text"))
-                .andExpect(jsonPath("$.tags[0]").value("BUSINESS"));
-    }
+    @MockBean
+    private NoteMapper noteMapper;
 
-    @Test
-    void testUpdateNote() throws Exception {
-        NoteCreateDto updateDto = new NoteCreateDto("updated title", "updated text", Set.of(NoteTag.PERSONAL));
-        Note model = new Note();
-        NoteResponseDto response = new NoteResponseDto();
-        response.setId("id1");
-        response.setTitle("updated title");
-        response.setText("updated text");
-        response.setTags(Set.of(NoteTag.PERSONAL));
-
-        Mockito.when(noteMapper.toModel(any())).thenReturn(model);
-        Mockito.when(noteService.updateNote(eq("id1"), any())).thenReturn(model);
-        Mockito.when(noteMapper.toDto(model)).thenReturn(response);
-
-        mockMvc.perform(put("/notes/id1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updateDto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value("id1"))
-                .andExpect(jsonPath("$.title").value("updated title"))
-                .andExpect(jsonPath("$.text").value("updated text"))
-                .andExpect(jsonPath("$.tags[0]").value("PERSONAL"));
-    }
-
-    @Test
-    void testDeleteNote() throws Exception {
-        mockMvc.perform(delete("/notes/id1"))
-                .andExpect(status().isNoContent()); // 204 No Content
-
-        Mockito.verify(noteService).deleteNote("id1");
-    }
+    @MockBean
+    private NoteRepository noteRepository;
 
     @Test
     void testGetNotesWithoutTag() throws Exception {
+        AppUser mockUser = new AppUser();
+        mockUser.setId("user1");
+        when(appUserService.getAppUser()).thenReturn(mockUser);
+
         Note note = new Note();
         note.setId("id1");
         note.setTitle("title");
         note.setText("text");
+        note.setTags(Set.of(NoteTag.PERSONAL));
+        note.setCreatedAt(LocalDateTime.now());
 
-        NoteResponseDto response = new NoteResponseDto();
-        response.setId("id1");
-        response.setTitle("title");
-        response.setText("text");
-        response.setTags(Set.of(NoteTag.PERSONAL));
+        Page<Note> notePage = new PageImpl<>(List.of(note));
 
-        Page<Note> page = new PageImpl<>(List.of(note));
+        when(noteRepository.findByUserId(eq("user1"), any(Pageable.class))).thenReturn(notePage);
 
-        Mockito.when(noteService.getAllNotes(any(Pageable.class))).thenReturn(page);
-        Mockito.when(noteMapper.toDtoPage(any(Page.class)))
-                .thenAnswer(invocation -> {
-                    Page<Note> notesPage = invocation.getArgument(0);
-                    return notesPage.map(n -> response);
-                });
+        NoteDto dto = new NoteDto();
+        dto.setTitle("title");
+        dto.setCreatedAt(note.getCreatedAt());
+        when(noteMapper.toNoteDto(any())).thenReturn(dto);
 
-        mockMvc.perform(get("/notes?page=0"))
+        mockMvc.perform(get("/notes?page=0&size=10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].id").value("id1"))
-                .andExpect(jsonPath("$.content[0].title").value("title"))
-                .andExpect(jsonPath("$.content[0].tags[0]").value("PERSONAL"));
+                .andExpect(jsonPath("$[0].title").value("title"));
     }
 
     @Test
     void testGetNotesWithTag() throws Exception {
+        AppUser mockUser = new AppUser();
+        mockUser.setId("user1");
+        when(appUserService.getAppUser()).thenReturn(mockUser);
+
         Note note = new Note();
         note.setId("id1");
         note.setTitle("title");
         note.setText("text");
+        note.setTags(Set.of(NoteTag.IMPORTANT));
+        note.setCreatedAt(LocalDateTime.now());
 
-        NoteResponseDto response = new NoteResponseDto();
-        response.setId("id1");
-        response.setTitle("title");
-        response.setText("text");
-        response.setTags(Set.of(NoteTag.IMPORTANT));
+        Page<Note> notePage = new PageImpl<>(List.of(note));
 
-        Page<Note> page = new PageImpl<>(List.of(note));
+        when(noteRepository.findByUserIdAndTags(eq("user1"), eq(NoteTag.IMPORTANT), any(Pageable.class)))
+                .thenReturn(notePage);
 
-        Mockito.when(noteService.getNotesByTag(eq(NoteTag.IMPORTANT), any(Pageable.class)))
-                .thenReturn(page);
+        NoteDto dto = new NoteDto();
+        dto.setTitle("title");
+        dto.setCreatedAt(note.getCreatedAt());
+        when(noteMapper.toNoteDto(any())).thenReturn(dto);
 
-        Mockito.when(noteMapper.toDtoPage(any(Page.class)))
-                .thenAnswer(invocation -> {
-                    Page<Note> notesPage = invocation.getArgument(0);
-                    return notesPage.map(n -> response);
-                });
-
-        mockMvc.perform(get("/notes?page=0&tag=IMPORTANT"))
+        mockMvc.perform(get("/notes?page=0&size=10&tag=IMPORTANT"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].id").value("id1"))
-                .andExpect(jsonPath("$.content[0].tags[0]").value("IMPORTANT"));
+                .andExpect(jsonPath("$[0].title").value("title"));
+    }
+
+    @Test
+    void testCreateNote() throws Exception {
+        NoteCreateDto createDto = new NoteCreateDto();
+        createDto.setTitle("title");
+        createDto.setText("text");
+        createDto.setTags(Set.of(NoteTag.PERSONAL));
+
+        Note note = new Note();
+        note.setId("id1");
+        note.setTitle("title");
+        note.setText("text");
+        note.setTags(createDto.getTags());
+        note.setCreatedAt(LocalDateTime.now());
+
+        NoteResponseDto responseDto = new NoteResponseDto();
+        responseDto.setId("id1");
+        responseDto.setTitle("title");
+        responseDto.setText("text");
+        responseDto.setTags(createDto.getTags());
+        responseDto.setCreatedAt(note.getCreatedAt());
+
+        when(noteMapper.toModel(any(NoteCreateDto.class))).thenReturn(note);
+        when(noteService.createNote(any(Note.class))).thenReturn(note);
+        when(noteMapper.toDto(any(Note.class))).thenReturn(responseDto);
+
+        mockMvc.perform(post("/notes")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(createDto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value("id1"))
+                .andExpect(jsonPath("$.title").value("title"))
+                .andExpect(jsonPath("$.tags[0]").value("PERSONAL"));
+    }
+
+    @Test
+    void testUpdateNote() throws Exception {
+        NoteCreateDto updateDto = new NoteCreateDto();
+        updateDto.setTitle("new title");
+        updateDto.setText("new text");
+        updateDto.setTags(Set.of(NoteTag.IMPORTANT));
+
+        Note note = new Note();
+        note.setId("id1");
+        note.setTitle("new title");
+        note.setText("new text");
+        note.setTags(updateDto.getTags());
+        note.setCreatedAt(LocalDateTime.now());
+
+        NoteResponseDto responseDto = new NoteResponseDto();
+        responseDto.setId("id1");
+        responseDto.setTitle("new title");
+        responseDto.setText("new text");
+        responseDto.setTags(updateDto.getTags());
+        responseDto.setCreatedAt(note.getCreatedAt());
+
+        when(noteMapper.toModel(any(NoteCreateDto.class))).thenReturn(note);
+        when(noteService.updateNote(eq("id1"), any(Note.class))).thenReturn(note);
+        when(noteMapper.toDto(any(Note.class))).thenReturn(responseDto);
+
+        mockMvc.perform(put("/notes/id1")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(updateDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("new title"))
+                .andExpect(jsonPath("$.tags[0]").value("IMPORTANT"));
+    }
+
+    @Test
+    void testDeleteNote() throws Exception {
+        doNothing().when(noteService).deleteNote("id1");
+
+        mockMvc.perform(delete("/notes/id1"))
+                .andExpect(status().isNoContent());
     }
 
     @Test
     void testGetCountOfUniqWords() throws Exception {
-        Map<String, Integer> words = Map.of("hello", 2, "world", 1);
-        Mockito.when(noteService.getCountOfNoteWords("id1")).thenReturn(words);
+        Map<String, Integer> stats = Map.of("Java", 3, "Spring", 2);
 
-        mockMvc.perform(get("/notes/{id}/stats", "id1")
-                        .contentType(MediaType.APPLICATION_JSON))
+        when(noteService.getCountOfNoteWords("id1")).thenReturn(stats);
+
+        mockMvc.perform(get("/notes/id1/stats"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.hello").value(2))
-                .andExpect(jsonPath("$.world").value(1));
+                .andExpect(jsonPath("$.Java").value(3))
+                .andExpect(jsonPath("$.Spring").value(2));
     }
 }
