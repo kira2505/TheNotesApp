@@ -26,7 +26,7 @@ public interface NoteApi {
 
     @Operation(summary = "Update an existing note by ID")
     @ApiResponse(responseCode = "200", description = "Note updated")
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     NoteResponseDto updateNote(@PathVariable String id, @RequestBody NoteCreateDto note);
 
     @Operation(summary = "Delete a note by ID")

@@ -168,7 +168,7 @@ class NoteControllerTest {
         when(noteService.updateNote(eq("id1"), any(Note.class))).thenReturn(note);
         when(noteMapper.toDto(any(Note.class))).thenReturn(responseDto);
 
-        mockMvc.perform(put("/notes/id1")
+        mockMvc.perform(patch("/notes/id1")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(updateDto)))
                 .andExpect(status().isOk())
