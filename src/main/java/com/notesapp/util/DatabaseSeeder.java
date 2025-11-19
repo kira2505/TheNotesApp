@@ -22,32 +22,36 @@ public class DatabaseSeeder {
     private PasswordEncoder passwordEncoder;
 
     @Bean
-    CommandLineRunner seedDatabase(AppUserRepository userRepository, NoteRepository noteRepository) {
+    CommandLineRunner seed(AppUserRepository userRepository, NoteRepository noteRepository) {
         return args -> {
-            AppUser alice = AppUser.builder()
+            if (userRepository.count() > 0) {
+                return;
+            }
+
+            AppUser admin = AppUser.builder()
                     .username("admin")
                     .passwordHash(passwordEncoder.encode("admin123"))
                     .role(Role.ROLE_USER)
                     .build();
 
-            AppUser bob = AppUser.builder()
+            AppUser root = AppUser.builder()
                     .username("root")
                     .passwordHash(passwordEncoder.encode("rootroot"))
                     .role(Role.ROLE_USER)
                     .build();
 
-            alice = userRepository.save(alice);
-            bob = userRepository.save(bob);
+            admin = userRepository.save(admin);
+            root = userRepository.save(root);
 
-            createRandomNotesForUser(alice, noteRepository);
-            createRandomNotesForUser(bob, noteRepository);
+            createRandomNotes(admin, noteRepository);
+            createRandomNotes(root, noteRepository);
         };
     }
 
-    private void createRandomNotesForUser(AppUser user, NoteRepository noteRepository) {
+    private void createRandomNotes(AppUser user, NoteRepository noteRepository) {
         Random random = new Random();
         String[] words = {"Java", "Spring", "Docker", "MongoDB", "API", "Note", "Hello", "World", "Swagger"};
-        List<Set<NoteTag>> tagCombinations = List.of(
+        List<Set<NoteTag>> tags = List.of(
                 Set.of(NoteTag.BUSINESS),
                 Set.of(NoteTag.PERSONAL),
                 Set.of(NoteTag.IMPORTANT)
@@ -58,12 +62,12 @@ public class DatabaseSeeder {
             note.setTitle(user.getUsername() + " Note " + i);
 
             StringBuilder text = new StringBuilder();
-            for (int j = 0; j < 20; j++) {
+            for (int j = 0; j < 20; j++)
                 text.append(words[random.nextInt(words.length)]).append(" ");
-            }
-            note.setText(text.toString().trim());
-            note.setCreatedAt(LocalDateTime.now().minusDays(random.nextInt(30)));
-            note.setTags(tagCombinations.get(i % tagCombinations.size()));
+
+            note.setText(text.toString());
+            note.setCreatedAt(LocalDateTime.now().minusDays(random.nextInt(20)));
+            note.setTags(tags.get(i % tags.size()));
             note.setUserId(user.getId());
 
             noteRepository.save(note);
